@@ -44,12 +44,19 @@ public class ControlBoolean extends Control<Boolean> {
     @noinspection ALL */
    private void $$$setupUI$$$() {
       panel = new JPanel();
-      panel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+      panel.setLayout(new GridBagLayout());
       valueCheckBox = new JCheckBox();
       valueCheckBox.setHorizontalAlignment(10);
       valueCheckBox.setHorizontalTextPosition(10);
       valueCheckBox.setText("Value:");
-      panel.add(valueCheckBox, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+      GridBagConstraints gbc;
+      gbc = new GridBagConstraints();
+      gbc.gridx = 0;
+      gbc.gridy = 0;
+      gbc.weightx = 1.0;
+      gbc.weighty = 1.0;
+      gbc.anchor = GridBagConstraints.WEST;
+      panel.add(valueCheckBox, gbc);
    }
 
    /**

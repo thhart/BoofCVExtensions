@@ -195,7 +195,7 @@ public class DevPanel extends JDialog {
                final ImageBase image = imageContainer.get(KEY_RESULT);
                final int width = image.width;
                final int height = image.height;
-               g.drawImage(ConvertBufferedImage.convertTo(image, null, true), 0, 0, width, height, null);
+               g.drawImage(ConvertBufferedImage.convertTo(image, null, true), 0, 0, getWidth(), getHeight(), null);
             }
          } else {
             if (imageContainer.containsKey(KEY_SOURCE)) {

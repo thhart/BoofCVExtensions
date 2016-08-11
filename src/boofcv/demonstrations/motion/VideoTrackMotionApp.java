@@ -4,11 +4,11 @@ import java.io.*;
 import java.lang.ref.WeakReference;
 import java.net.*;
 import java.util.*;
-import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import javax.swing.SwingUtilities;
 import boofcv.abst.motion.ConfigMotionSize;
 import boofcv.alg.tracker.motion.MotionTracker;
 import boofcv.factory.motion.FactoryMotionTracker;
@@ -35,13 +35,13 @@ public class VideoTrackMotionApp {
 	private final ControlDouble sigma;
 	private final ControlInteger radius;
 	private final ControlInteger percentage;
+	private final ControlList<PathLabel> paths;
 
 	private BufferedImage workImage;
 	private GrayU8 framePrevious;
 	private GrayU8 frameNext;
 	private final Map<String, Control> controlMap = new ConcurrentHashMap<>();
 
-	private static List<PathLabel> inputs;
 	private MotionTracker motionTracker;
 
 	private VideoTrackMotionApp() {
@@ -57,11 +57,34 @@ public class VideoTrackMotionApp {
 		controlMap.put("Radius", radius);
 		percentage = new ControlInteger("Percentage/Size", 25, 1, 100);
 		controlMap.put("Percentage/Size", percentage);
-		dev = new DevPanel(control -> {}, controlMap);
+		paths = new ControlList<>("Inputs",
+				new PathLabel("Ball", "thhart/video/motion/Ball.mjpeg"),
+				new PathLabel("Street", "thhart/video/motion/street_intersection.mp4"),
+				new PathLabel("Camera", "http://192.168.188.200/snap.jpg")
+		);
+		controlMap.put("Paths", paths);
+		dev = new DevPanel(control -> {
+			    changeInput();
+		}, controlMap);
 		scheduledFetcher = new ScheduledFetcher();
 		Executors.newCachedThreadPool().submit(scheduledFetcher);
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				changeInput();
+			}
+		});
 	}
 
+
+	private class PathLabel extends boofcv.io.PathLabel {
+		public PathLabel(String label, String path) {
+			super(label, path);
+		}
+
+		public String toString() {
+			return label;
+		}
+	}
 
 	private void renderFeatures(BufferedImage orig, double trackerFPS) {
 		if (workImage != null) {
@@ -120,6 +143,7 @@ public class VideoTrackMotionApp {
 					if (active && source != null && source.length() > 0) {
 						InputStream stream = null;
 						try {
+							changePending = false;
 							final SimpleImageSequence<ImageInterleaved> sequence;
 							long waitMax = System.currentTimeMillis();
 							if(source.startsWith("http")) {
@@ -136,7 +160,7 @@ public class VideoTrackMotionApp {
 								sequence = media.openVideo(source, ImageType.il(3, ImageDataType.U8));
 							}
 							do {
-								while(sequence.hasNext()) {
+								while(sequence.hasNext() && ! changePending) {
                            workImage = sequence.getGuiImage();
                            updateAlg(HelperConvert.convertToGray((InterleavedU8)sequence.next()), sequence.getGuiImage());
                         }
@@ -157,8 +181,8 @@ public class VideoTrackMotionApp {
 
 	final ScheduledFetcher scheduledFetcher;
 
-	public void changeInput(int index) {
-		scheduledFetcher.setSource(inputs.get(index).getPath());
+	public void changeInput() {
+		scheduledFetcher.setSource(paths.getValue().getPath());
 		scheduledFetcher.setActive(true);
 		frameNext = null; framePrevious = null;
 	}
@@ -187,11 +211,6 @@ public class VideoTrackMotionApp {
 
 	public static void main( String args[] ) {
 		final VideoTrackMotionApp app = new VideoTrackMotionApp();
-		inputs = new ArrayList<>();
-		inputs.add(new PathLabel("Ball", "thhart/video/motion/Ball.mjpeg"));
-		inputs.add(new PathLabel("Street", "thhart/video/motion/street_intersection.mp4"));
-		inputs.add(new PathLabel("Camera", "http://192.168.188.200/snap.jpg"));
-		app.changeInput(2);
 	}
 
 	private class UrlImageSequence implements SimpleImageSequence<ImageInterleaved> {

@@ -1,6 +1,7 @@
-package boofcv.helper.visualize;
+package boofcv.helper;
 
 import java.awt.Rectangle;
+import boofcv.helper.visualize.HelperGeometry;
 import org.junit.Assert;
 
 /**
@@ -17,6 +18,10 @@ public class HelperGeometryTest {
       rec2.setLocation(10,22);
       Assert.assertEquals(2, HelperGeometry.findClosest(rec1, rec2), 0);
       rec2.setLocation(4,10);
+      Assert.assertEquals(1, HelperGeometry.findClosest(rec1, rec2), 0);
+      rec2.setLocation(9,9);
+      Assert.assertEquals(0, HelperGeometry.findClosest(rec1, rec2), 0);
+      rec2.setLocation(10,4);
       Assert.assertEquals(1, HelperGeometry.findClosest(rec1, rec2), 0);
    }
 
