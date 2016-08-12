@@ -15,7 +15,16 @@ import georegression.geometry.UtilPolygons2D_I32;
 import georegression.struct.shapes.Rectangle2D_I32;
 
 /**
- Created by th on 11.08.16.
+ This is a simple motion tracker which tries to recognize object size. Following algorithm is used:
+ 1. Take two input images and blur these.
+ 2. Create a diff of the inputs.
+ 3. Extract canny of the diff.
+ 4. Try to cluster boundaries of differences to check for singular objects.
+
+ TODO: "Simple" light change is still a problem, when a camera switches to infrared mode for instance
+
+ @author Thomas Hartwig
+ @date 20160812
  */
 public class MotionTracker {
    public ConfigMotionSize config = new ConfigMotionSize();

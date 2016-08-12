@@ -12,6 +12,7 @@ import javax.swing.SwingUtilities;
 import boofcv.abst.motion.ConfigMotionSize;
 import boofcv.alg.tracker.motion.MotionTracker;
 import boofcv.factory.motion.FactoryMotionTracker;
+import boofcv.gui.binary.VisualizeBinaryData;
 import boofcv.helper.*;
 import boofcv.helper.visualize.*;
 import boofcv.helper.visualize.control.*;
@@ -60,7 +61,8 @@ public class VideoTrackMotionApp {
 		paths = new ControlList<>("Inputs",
 				new PathLabel("Ball", "thhart/video/motion/Ball.mjpeg"),
 				new PathLabel("Street", "thhart/video/motion/street_intersection.mp4"),
-				new PathLabel("Camera", "http://192.168.188.200/snap.jpg")
+				new PathLabel("Camera1", "http://192.168.188.42/snapshot.cgi?user=admin"),
+				new PathLabel("Camera2", "http://192.168.188.200/snap.jpg")
 		);
 		controlMap.put("Paths", paths);
 		dev = new DevPanel(control -> {
@@ -201,7 +203,7 @@ public class VideoTrackMotionApp {
 			motionTracker = FactoryMotionTracker.motionTracker(new ConfigMotionSize(blur.getValue(), sigma.getValue(), radius.getValue(), tMin.getValue().floatValue(), tMax.getValue().floatValue(), percentage.getValue()));
 			motionTracker.process(framePrevious, frameNext);
 			dev.updateImage("Difference", motionTracker.difference);
-			dev.updateImage("Contour", motionTracker.binary);
+			dev.updateImage("Contour", VisualizeBinaryData.renderBinary(motionTracker.binary, false, null));
 		}
 		renderFeatures(buffImage, 1000/(System.currentTimeMillis() - timerMeasure));
 		if (workImage != null) {
