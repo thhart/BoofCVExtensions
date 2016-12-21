@@ -11,11 +11,11 @@ public class ControlList<T> extends Control<T> {
    private final DefaultComboBoxModel<T> model;
    private JPanel panel;
    private JComboBox<T> comboBox;
-   private JLabel label;
+   //private JLabel label;
 
    public ControlList(final String name, T... list) {
       super(name);
-      SwingUtilities.invokeLater(() -> label.setText(name + ": "));
+      //SwingUtilities.invokeLater(() -> label.setText(name + ": "));
       SwingUtilities.invokeLater(() -> comboBox.addActionListener(event -> controlListener.fireControlUpdated(ControlList.this)));
       model = new DefaultComboBoxModel<>();
       for (T t : list) {

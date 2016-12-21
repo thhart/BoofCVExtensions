@@ -1,4 +1,4 @@
-package boofcv.demonstrations.motion;
+package boofcv.demonstration.motion;
 
 import java.io.*;
 import java.lang.ref.WeakReference;
@@ -14,6 +14,8 @@ import boofcv.alg.tracker.motion.MotionTracker;
 import boofcv.factory.motion.FactoryMotionTracker;
 import boofcv.gui.binary.VisualizeBinaryData;
 import boofcv.helper.*;
+import boofcv.helper.PathLabel;
+import boofcv.helper.fetcher.*;
 import boofcv.helper.visualize.*;
 import boofcv.helper.visualize.control.*;
 import boofcv.io.*;
@@ -27,7 +29,7 @@ import boofcv.struct.image.*;
  *
  * @author Thomas Hartwig
  */
-public class VideoTrackMotionApp {
+public class VideoTrackMotionApp implements FetcherListener {
 
 	private final DevPanel dev;
 	private final ControlDouble tMin;
@@ -68,7 +70,7 @@ public class VideoTrackMotionApp {
 		dev = new DevPanel(control -> {
 			    changeInput();
 		}, controlMap);
-		scheduledFetcher = new ScheduledFetcher();
+		scheduledFetcher = new ScheduledFetcher(this);
 		Executors.newCachedThreadPool().submit(scheduledFetcher);
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
@@ -77,16 +79,6 @@ public class VideoTrackMotionApp {
 		});
 	}
 
-
-	private class PathLabel extends boofcv.io.PathLabel {
-		public PathLabel(String label, String path) {
-			super(label, path);
-		}
-
-		public String toString() {
-			return label;
-		}
-	}
 
 	private void renderFeatures(BufferedImage orig, double trackerFPS) {
 		if (workImage != null) {
@@ -113,84 +105,20 @@ public class VideoTrackMotionApp {
 
 	private long timer = System.currentTimeMillis();
 
-	private class ScheduledFetcher implements Runnable {
-		public void setActive(boolean active) {
-			this.active = active;
-		}
+	private final ScheduledFetcher scheduledFetcher;
 
-		private boolean active = true;
-		private boolean changePending = false;
-
-		public String getSource() {
-			return source;
-		}
-
-		public void setSource(String source) {
-			this.source = source;
-			this.changePending = true;
-		}
-
-		private String source = "";
-
-		private final WeakReference<Runnable> reference;
-
-		public ScheduledFetcher() {
-			reference = new WeakReference<>(this);
-		}
-
-		public void run() {
-			while(reference.get() != null) {
-				try {
-					Thread.sleep(1000);
-					if (active && source != null && source.length() > 0) {
-						InputStream stream = null;
-						try {
-							changePending = false;
-							final SimpleImageSequence<ImageInterleaved> sequence;
-							long waitMax = System.currentTimeMillis();
-							if(source.startsWith("http")) {
-								if (source.endsWith("mjpeg")) {
-									final URL urlx = new URL(source);
-									stream = urlx.openStream();
-									sequence = new MjpegStreamSequence<>(stream, ImageType.il(3, ImageDataType.U8));
-								} else {
-									sequence = new UrlImageSequence(source);
-								}
-								waitMax += 1000;
-							} else {
-								MediaManager media = DefaultMediaManager.INSTANCE;
-								sequence = media.openVideo(source, ImageType.il(3, ImageDataType.U8));
-							}
-							do {
-								while(sequence.hasNext() && ! changePending) {
-                           workImage = sequence.getGuiImage();
-                           updateAlg(HelperConvert.convertToGray((InterleavedU8)sequence.next()), sequence.getGuiImage());
-                        }
-							} while (waitMax > System.currentTimeMillis());
-						} finally {
-							if (stream != null) {
-								stream.close();
-							}
-						}
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		}
-
-	}
-
-	final ScheduledFetcher scheduledFetcher;
-
-	public void changeInput() {
+	private void changeInput() {
 		scheduledFetcher.setSource(paths.getValue().getPath());
 		scheduledFetcher.setActive(true);
 		frameNext = null; framePrevious = null;
 	}
 
+	public void updateImage(GrayU8 grayU8, BufferedImage image) {
+		workImage = image;
+		updateAlg(grayU8, workImage);
+	}
 
-	protected void updateAlg(GrayU8 frame, BufferedImage buffImage) {
+	private void updateAlg(GrayU8 frame, BufferedImage buffImage) {
 		long timerMeasure = System.currentTimeMillis();
 		//this.frameLive = frame;
 		this.frameNext = frame.clone();
@@ -215,70 +143,4 @@ public class VideoTrackMotionApp {
 		final VideoTrackMotionApp app = new VideoTrackMotionApp();
 	}
 
-	private class UrlImageSequence implements SimpleImageSequence<ImageInterleaved> {
-		private final URL url;
-		private final int width, height;
-		private InterleavedU8 frame;
-		private BufferedImage guiImage;
-		private AtomicInteger integer = new AtomicInteger(0);
-
-		public UrlImageSequence(String url) throws IOException {
-			this.url = new URL(url);
-			final BufferedImage image = fetch();
-			this.width = image.getWidth();
-			this.height = image.getHeight();
-		}
-
-		private BufferedImage fetch() throws IOException {
-			guiImage = HelperIo.readImageFromUrl(this.url);
-			frame = new InterleavedU8(guiImage.getWidth(), guiImage.getHeight(), 3);
-			ConvertBufferedImage.convertFrom(guiImage, frame, true);
-			return guiImage;
-		}
-
-		public int getNextWidth() {
-			return width;
-		}
-
-		public int getNextHeight() {
-			return height;
-		}
-
-		public boolean hasNext() {
-			return true;
-		}
-
-		public ImageInterleaved<InterleavedU8> next() {
-			try {
-				fetch();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return frame;
-		}
-
-		public BufferedImage getGuiImage() {
-			return guiImage;
-		}
-
-		public void close() {
-
-		}
-
-		public int getFrameNumber() {
-			return integer.getAndIncrement();
-		}
-
-		public void setLoop(boolean loop) {
-
-		}
-
-		public ImageType<ImageInterleaved> getImageType() {
-			return ImageType.il(3, ImageDataType.U8);
-		}
-
-		public void reset() {
-
-		}
-	}
 }

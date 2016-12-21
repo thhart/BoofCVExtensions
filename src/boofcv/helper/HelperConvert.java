@@ -26,6 +26,9 @@ public class HelperConvert {
       if (image instanceof GrayI16) {
          return ConvertBufferedImage.convertTo((GrayI16) image, null);
       }
+      if (image instanceof InterleavedU8) {
+         return ConvertBufferedImage.convertTo((InterleavedU8) image, null, true);
+      }
       final BufferedImage ix = new BufferedImage(320, 200, BufferedImage.TYPE_BYTE_GRAY);
       ix.getGraphics().drawString("Image type not supported: " + image.getClass().getSimpleName(), 5, 24);
       return ix;

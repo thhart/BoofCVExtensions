@@ -1,7 +1,6 @@
 package boofcv.helper;
 
 import java.awt.Rectangle;
-import boofcv.helper.visualize.HelperGeometry;
 import org.junit.Assert;
 
 /**

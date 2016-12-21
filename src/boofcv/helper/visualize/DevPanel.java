@@ -1,7 +1,7 @@
 package boofcv.helper.visualize;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
+import java.util.concurrent.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
@@ -19,11 +19,15 @@ public class DevPanel extends JDialog {
    private JToggleButton toggleButtonSource;
    private JPanel panelThumbs;
    private JPanel panelSource;
+   private JProgressBar progressBar;
+   private JPanel panelAll;
    public static String KEY_RESULT = "_RESULT_";
    public static String KEY_SOURCE = "_SOURCE_";
-   private final Map<String, ImageBase> imageContainer = new ConcurrentHashMap<>();
+   private static String REFERENCE_DEFAULT = "_DEFAULT_";
+   private final Map<String, ImageContainer> containers = new ConcurrentHashMap<>();
+   private String referenceSelected = REFERENCE_DEFAULT;
 
-   public DevPanel(ControlListener listener, Control... controls) {
+   public DevPanel(ControlListener listener, boolean show, Control... controls) {
       setContentPane(contentPane);
       setModal(false);
 
@@ -47,18 +51,23 @@ public class DevPanel extends JDialog {
          control.setControlListener(listener);
          box.add(control.getComponent());
       }
-      setSize(1280, 768);
+      setSize(1920, 1024);
       SwingUtilities.invokeLater(new Runnable() {
          public void run() {
             panelSource.add(new Painter());
             panelThumbs.add(new PainterThumbnail());
-            setVisible(true);
+            if (show) {
+               setVisible(true);
+            }
          }
       });
+      toggleButtonSource.addActionListener(e -> SwingUtilities.invokeLater(() -> {
+         panelSource.repaint();
+      }));
    }
 
    public DevPanel(ControlListener listener, Map<String, Control> map) {
-      this(listener, map.values().toArray(new Control[map.size()]));
+      this(listener, true, map.values().toArray(new Control[map.size()]));
    }
 
    public Object getValue(Object name) {
@@ -93,8 +102,21 @@ public class DevPanel extends JDialog {
       }
    }
 
+   public void setBusy(boolean status) {
+      progressBar.setIndeterminate(status);
+   }
+
    public void updateImage(String key, ImageBase image) {
-      imageContainer.put(key, image);
+      updateImage(REFERENCE_DEFAULT, key, image);
+   }
+
+   public void updateImage(String reference, String key, ImageBase image) {
+      ImageContainer container = containers.get(reference);
+      if (container == null) {
+         container = new ImageContainer(reference);
+         containers.put(reference, container);
+      }
+      container.images.put(key, image);
       SwingUtilities.invokeLater(new Runnable() {
          public void run() {
             panelSource.repaint();
@@ -161,6 +183,26 @@ public class DevPanel extends JDialog {
       toggleButtonSource = new JToggleButton();
       toggleButtonSource.setText("Source");
       toolBar1.add(toggleButtonSource);
+      final JPanel panel2 = new JPanel();
+      panel2.setLayout(new GridBagLayout());
+      panel2.setOpaque(false);
+      toolBar1.add(panel2);
+      progressBar = new JProgressBar();
+      progressBar.setMaximumSize(new Dimension(120, 18));
+      gbc = new GridBagConstraints();
+      gbc.gridx = 1;
+      gbc.gridy = 0;
+      gbc.weightx = 1.0;
+      gbc.fill = GridBagConstraints.HORIZONTAL;
+      panel2.add(progressBar, gbc);
+      final JPanel panel3 = new JPanel();
+      panel3.setLayout(new GridBagLayout());
+      gbc = new GridBagConstraints();
+      gbc.gridx = 0;
+      gbc.gridy = 0;
+      gbc.weightx = 2.0;
+      gbc.fill = GridBagConstraints.BOTH;
+      panel2.add(panel3, gbc);
       panelSource = new JPanel();
       panelSource.setLayout(new BorderLayout(0, 0));
       gbc = new GridBagConstraints();
@@ -181,49 +223,88 @@ public class DevPanel extends JDialog {
       gbc.weighty = 1.0;
       gbc.fill = GridBagConstraints.BOTH;
       panel1.add(panelControl, gbc);
+      panelAll = new JPanel();
+      panelAll.setLayout(new BorderLayout(0, 0));
+      gbc = new GridBagConstraints();
+      gbc.gridx = 0;
+      gbc.gridy = 2;
+      gbc.fill = GridBagConstraints.BOTH;
+      contentPane.add(panelAll, gbc);
    }
 
    /**
     @noinspection ALL */
    public JComponent $$$getRootComponent$$$() { return contentPane; }
 
-   class Painter extends JPanel {
+   private class Painter extends JPanel {
       protected void paintComponent(Graphics g) {
          super.paintComponent(g);
-         if (!toggleButtonSource.isSelected()) {
-            if (imageContainer.containsKey(KEY_RESULT)) {
-               final ImageBase image = imageContainer.get(KEY_RESULT);
-               final int width = image.width;
-               final int height = image.height;
-               g.drawImage(ConvertBufferedImage.convertTo(image, null, true), 0, 0, getWidth(), getHeight(), null);
-            }
-         } else {
-            if (imageContainer.containsKey(KEY_SOURCE)) {
-               final ImageBase image = imageContainer.get(KEY_SOURCE);
-               g.drawImage(ConvertBufferedImage.convertTo(image, null, true), 0, 0, getWidth(), getHeight(), null);
+         ImageContainer imageContainer = containers.get(referenceSelected);
+         if (imageContainer != null) {
+            if (!toggleButtonSource.isSelected()) {
+               if (imageContainer.containsKey(KEY_RESULT)) {
+                  final ImageBase image = imageContainer.get(KEY_RESULT);
+                  final int width = image.width;
+                  final int height = image.height;
+                  g.drawImage(ConvertBufferedImage.convertTo(image, null, true), 0, 0, getWidth(), getHeight(), null);
+               }
+            } else {
+               if (imageContainer.containsKey(KEY_SOURCE)) {
+                  final ImageBase image = imageContainer.get(KEY_SOURCE);
+                  g.drawImage(ConvertBufferedImage.convertTo(image, null, true), 0, 0, getWidth(), getHeight(), null);
+               }
             }
          }
       }
    }
 
-   class PainterThumbnail extends JPanel {
+
+   private class ImageContainer {
+      private String reference;
+      private final Map<String, ImageBase> images = new ConcurrentHashMap<>();
+
+      public ImageContainer(String reference) {
+         this.reference = reference;
+      }
+
+      public int hashCode() {
+         return reference.hashCode();
+      }
+
+      public boolean containsKey(String key) {
+         return images.containsKey(key);
+      }
+
+      public ImageBase get(String key) {
+         return images.get(key);
+      }
+
+      public Iterable<? extends String> keySet() {
+         return images.keySet();
+      }
+   }
+
+   private class PainterThumbnail extends JPanel {
       protected void paintComponent(Graphics g) {
          super.paintComponent(g);
          final int height = getHeight() - 26;
          int pos = 0;
-         for (String key : imageContainer.keySet()) {
-            if (!key.equals(KEY_SOURCE) && !key.equals(KEY_RESULT)) {
-               final ImageBase image = imageContainer.get(key);
-               int ph = (image.height < height) ? image.height : height;
-               int pw = (int)((double)ph / image.height * image.width);
-               g.drawImage(HelperConvert.convertToBufferedGray(image), pos, 24, pw, ph, null);
-               g.setColor(Color.WHITE);
-               g.fillRect(pos, 0, pw, 24);
-               g.setColor(Color.DARK_GRAY);
-               g.drawRect(pos, 24, pw, pw);
-               g.setColor(Color.BLACK);
-               g.drawString(key, pos + 1, 18);
-               pos += pw;
+         ImageContainer imageContainer = containers.get(referenceSelected);
+         if (imageContainer != null) {
+            for (String key : imageContainer.keySet()) {
+               if (!key.equals(KEY_SOURCE) && !key.equals(KEY_RESULT)) {
+                  final ImageBase image = imageContainer.get(key);
+                  int ph = (image.height < height) ? image.height : height;
+                  int pw = (int)((double)ph / image.height * image.width);
+                  g.drawImage(HelperConvert.convertToBufferedGray(image), pos, 24, pw, ph, null);
+                  g.setColor(Color.WHITE);
+                  g.fillRect(pos, 0, pw, 24);
+                  g.setColor(Color.DARK_GRAY);
+                  g.drawRect(pos, 24, pw, pw);
+                  g.setColor(Color.BLACK);
+                  g.drawString(key, pos + 1, 18);
+                  pos += pw;
+               }
             }
          }
       }

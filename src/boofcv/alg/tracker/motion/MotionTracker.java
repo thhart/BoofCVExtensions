@@ -9,7 +9,7 @@ import boofcv.alg.filter.blur.BlurImageOps;
 import boofcv.alg.misc.PixelMath;
 import boofcv.factory.feature.detect.edge.FactoryEdgeDetectors;
 import boofcv.helper.HelperConvert;
-import boofcv.helper.visualize.HelperGeometry;
+import boofcv.helper.HelperGeometry;
 import boofcv.struct.image.*;
 import georegression.geometry.UtilPolygons2D_I32;
 import georegression.struct.shapes.Rectangle2D_I32;
@@ -21,7 +21,12 @@ import georegression.struct.shapes.Rectangle2D_I32;
  3. Extract canny of the diff.
  4. Try to cluster boundaries of differences to check for singular objects.
 
- TODO: "Simple" light change is still a problem, when a camera switches to infrared mode for instance
+ It is recommended to make sure to use a time shift of two images for at least 100 ms to make sure the differences are
+ visible in the image.
+
+ TODO: "Simple" light change is still a problem, when a camera switches to infrared mode for instance, this might
+ be circumstanced by thresholding the motion time wise, so if the motion is persistent over a minimum time period like
+ more than 1 second or for a minimum of frames
 
  @author Thomas Hartwig
  @date 20160812

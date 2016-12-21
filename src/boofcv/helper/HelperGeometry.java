@@ -1,9 +1,12 @@
-package boofcv.helper.visualize;
+package boofcv.helper;
 
 import java.util.*;
 import java.util.List;
 import java.awt.*;
+import java.awt.geom.Line2D;
+import java.awt.geom.Line2D.Double;
 import boofcv.helper.HelperConvert;
+import georegression.struct.line.LineSegment2D_F32;
 import georegression.struct.shapes.Rectangle2D_I32;
 
 /**
@@ -28,6 +31,10 @@ public class HelperGeometry {
 
    public static List<Rectangle2D_I32> clusterRectangles(List<Rectangle2D_I32> recs, final int distance) {
       return HelperConvert.rectangles(clusterRectangles2D(HelperConvert.rectangles2D(recs), distance));
+   }
+
+   public static Line2D convertToLine(LineSegment2D_F32 f32) {
+      return new Double(f32.getA().getX(), f32.getA().getY(), f32.getB().getX(), f32.getB().getY());
    }
 
    public static double findClosest(Rectangle rec1, Rectangle rec2) {
