@@ -29,6 +29,15 @@ protected final static Logger logger = Logger.getLogger("Control");
 // -------------------------- OTHER METHODS --------------------------
 
    public abstract V getValue();
+
+   public boolean getAsBoolean() {
+      return String.valueOf(getValue()).toLowerCase().matches("(true|1|on)");
+   };
+
+   public int getAsInteger() {
+      return (int) Double.parseDouble(String.valueOf(getValue()));
+   };
+
    public abstract Component getComponent();
 
    public String getName() {
