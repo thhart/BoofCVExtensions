@@ -33,7 +33,7 @@ import org.ddogleg.fitting.modelset.ransac.Ransac;
  */
 public class LineApp {
 
-	private final DevPanel dev;
+	private final BoofCvDevPanel dev;
 	private final ControlDouble edgeThreshold;
 	private final ControlInteger regionSize;
 	private final ControlInteger maxLines;
@@ -61,7 +61,7 @@ public class LineApp {
 				new PathLabel("3", "/home/th/dev/ai/uvisContainer/work/Tensor/20160701/20160701100302637-000000000000000000_frontbild.jpg"),
 				new PathLabel("4", "/home/th/dev/ai/uvisContainer/work/Tensor/20160701/20160701131947938-000000000000000000_frontbild.jpg")
 		);
-		dev = new DevPanel(control -> changeInput(), true, mergeDistance, mergeAngle, edgeThreshold, regionSize, maxLines, paths);
+		dev = new BoofCvDevPanel(control -> changeInput(), true, mergeDistance, mergeAngle, edgeThreshold, regionSize, maxLines, paths);
 		SwingUtilities.invokeLater(this::changeInput);
 	}
 
@@ -162,10 +162,10 @@ public class LineApp {
 
 		BufferedImage renderedBinary = VisualizeBinaryData.renderBinary(detected, false, null);
 		dev.updateImage("Binary", renderedBinary);
-		dev.updateImage(DevPanel.KEY_SOURCE, workImage);
+		dev.updateImage(BoofCvDevPanel.KEY_SOURCE, workImage);
 		renderFeatures(workImage, 1000/(System.currentTimeMillis() - timerMeasure));
 		if (workImage != null) {
-			dev.updateImage(DevPanel.KEY_RESULT, workImage);
+			dev.updateImage(BoofCvDevPanel.KEY_RESULT, workImage);
 		}
 	}
 

@@ -6,6 +6,7 @@ import java.awt.Component;
 /**
  Created by th on 28.07.16.
  */
+@SuppressWarnings("unused")
 public abstract class Control<V> {
 // ------------------------------ FIELDS ------------------------------
 protected final static Logger logger = Logger.getLogger("Control");
@@ -19,12 +20,12 @@ protected final static Logger logger = Logger.getLogger("Control");
       this.controlListener = controlListener;
    }
 
-   protected ControlListener controlListener = control ->
+   ControlListener controlListener = control ->
          logger.warning("ControlManager not set, controls will not send its values.");
 
 // --------------------------- CONSTRUCTORS ---------------------------
 
-   protected Control(String name) {this.name = name;}
+   Control(String name) {this.name = name;}
 
 // -------------------------- OTHER METHODS --------------------------
 
@@ -32,11 +33,19 @@ protected final static Logger logger = Logger.getLogger("Control");
 
    public boolean getAsBoolean() {
       return String.valueOf(getValue()).toLowerCase().matches("(true|1|on)");
-   };
+   }
 
    public int getAsInteger() {
       return (int) Double.parseDouble(String.valueOf(getValue()));
-   };
+   }
+
+   public float getAsFloat() {
+      return Float.parseFloat(String.valueOf(getValue()));
+   }
+
+   public double getAsDouble() {
+      return Double.parseDouble(String.valueOf(getValue()));
+   }
 
    public abstract Component getComponent();
 

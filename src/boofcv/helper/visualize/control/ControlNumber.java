@@ -36,14 +36,14 @@ abstract class ControlNumber<V> extends Control<V> {
             }
             updateTitle();
          });
-         slider.setValue((int)(value * multiplier));
          slider.setMaximum((int)(max * multiplier));
          slider.setMinimum((int)(min * multiplier));
+         slider.setValue((int)(value * multiplier));
          slider.setSnapToTicks(true);
          slider.setPaintTrack(true);
          slider.setPaintLabels(true);
-         labelTable.put(slider.getMinimum(), new JLabel(String.valueOf(min)));
-         labelTable.put(slider.getMaximum(), new JLabel(String.valueOf(max)));
+         labelTable.put(slider.getMinimum(), new JLabel(format.format(min)));
+         labelTable.put(slider.getMaximum(), new JLabel(format.format(max)));
          updateTitle();
          updateLabels();
          slider.addChangeListener(new ChangeListener() {

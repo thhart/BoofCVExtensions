@@ -26,6 +26,9 @@ public class HelperConvert {
       if (image instanceof GrayI16) {
          return ConvertBufferedImage.convertTo((GrayI16) image, null);
       }
+      if (image instanceof GrayS32) {
+         return convertToBufferedGray(ConvertImage.convert((GrayS32) image, (GrayF32)null));
+      }
       if (image instanceof InterleavedU8) {
          return ConvertBufferedImage.convertTo((InterleavedU8) image, null, true);
       }

@@ -1,11 +1,7 @@
 package boofcv.demonstration.motion;
 
-import java.io.*;
-import java.lang.ref.WeakReference;
-import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import javax.swing.SwingUtilities;
@@ -18,10 +14,6 @@ import boofcv.helper.PathLabel;
 import boofcv.helper.fetcher.*;
 import boofcv.helper.visualize.*;
 import boofcv.helper.visualize.control.*;
-import boofcv.io.*;
-import boofcv.io.image.*;
-import boofcv.io.wrapper.DefaultMediaManager;
-import boofcv.io.wrapper.images.*;
 import boofcv.struct.image.*;
 
 /**
@@ -31,7 +23,7 @@ import boofcv.struct.image.*;
  */
 public class VideoTrackMotionApp implements FetcherListener {
 
-	private final DevPanel dev;
+	private final BoofCvDevPanel dev;
 	private final ControlDouble tMin;
 	private final ControlDouble tMax;
 	private final ControlInteger blur;
@@ -67,16 +59,12 @@ public class VideoTrackMotionApp implements FetcherListener {
 				new PathLabel("Camera2", "http://192.168.188.200/snap.jpg")
 		);
 		controlMap.put("Paths", paths);
-		dev = new DevPanel(control -> {
+		dev = new BoofCvDevPanel(control -> {
 			    changeInput();
 		}, controlMap);
 		scheduledFetcher = new ScheduledFetcher(this);
 		Executors.newCachedThreadPool().submit(scheduledFetcher);
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				changeInput();
-			}
-		});
+		SwingUtilities.invokeLater(() -> changeInput());
 	}
 
 
@@ -122,7 +110,7 @@ public class VideoTrackMotionApp implements FetcherListener {
 		long timerMeasure = System.currentTimeMillis();
 		//this.frameLive = frame;
 		this.frameNext = frame.clone();
-		dev.updateImage(DevPanel.KEY_SOURCE, frame);
+		dev.updateImage(BoofCvDevPanel.KEY_SOURCE, frame);
 		if (System.currentTimeMillis() - timer > 500 || this.framePrevious == null) {
 			timer = System.currentTimeMillis();
 			this.framePrevious = frame.clone();
@@ -135,7 +123,7 @@ public class VideoTrackMotionApp implements FetcherListener {
 		}
 		renderFeatures(buffImage, 1000/(System.currentTimeMillis() - timerMeasure));
 		if (workImage != null) {
-			dev.updateImage(DevPanel.KEY_RESULT, workImage);
+			dev.updateImage(BoofCvDevPanel.KEY_RESULT, workImage);
 		}
 	}
 

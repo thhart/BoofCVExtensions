@@ -20,12 +20,8 @@
     </orderEntry>
     <orderEntry type="library" name="com.thoughtworks.xstream:xstream:1.4.9" level="application" />
     <orderEntry type="library" name="commons-io:commons-io:2.5" level="application" />
-    <orderEntry type="library" name="Maven: org.nd4j:nd4j-api:0.7.0" level="project" />
-    <orderEntry type="module" module-name="BoofCV Image Processing" />
-    <orderEntry type="module" module-name="BoofCV Feature" />
     <orderEntry type="library" name="Gradle: org.georegression:georegression:0.12-SNAPSHOT" level="project" />
-    <orderEntry type="module" module-name="BoofCV IO" />
-    <orderEntry type="module" module-name="BoofCV Visualize" />
     <orderEntry type="library" name="Gradle: org.ddogleg:ddogleg:0.10-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="org.boofcv:all:0.24.1" level="application" />
   </component>
 </module>

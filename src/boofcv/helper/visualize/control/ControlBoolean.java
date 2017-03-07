@@ -2,6 +2,7 @@ package boofcv.helper.visualize.control;
 
 import java.awt.*;
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 
 /**
  Created by th on 28.07.16.
@@ -12,12 +13,10 @@ public class ControlBoolean extends Control<Boolean> {
 
    public ControlBoolean(final String name, boolean status) {
       super(name);
-      SwingUtilities.invokeLater(() -> valueCheckBox.setText(name + ": "));
-      SwingUtilities.invokeLater(new Runnable() {
-         public void run() {
-            valueCheckBox.setSelected(status);
-            valueCheckBox.addActionListener(event -> controlListener.fireControlUpdated(ControlBoolean.this));
-         }
+      SwingUtilities.invokeLater(() -> ((TitledBorder) panel.getBorder()).setTitle(name));
+      SwingUtilities.invokeLater(() -> {
+         valueCheckBox.setSelected(status);
+         valueCheckBox.addActionListener(event -> controlListener.fireControlUpdated(ControlBoolean.this));
       });
    }
 
