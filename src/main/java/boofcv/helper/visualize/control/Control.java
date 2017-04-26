@@ -1,7 +1,7 @@
 package boofcv.helper.visualize.control;
 
-import java.util.logging.Logger;
 import java.awt.Component;
+import org.slf4j.*;
 
 /**
  Created by th on 28.07.16.
@@ -9,7 +9,8 @@ import java.awt.Component;
 @SuppressWarnings("unused")
 public abstract class Control<V> {
 // ------------------------------ FIELDS ------------------------------
-protected final static Logger logger = Logger.getLogger("Control");
+   protected final static Logger logger = LoggerFactory.getLogger(Control.class);
+
    final String name;
 
    public ControlListener getControlListener() {
@@ -20,8 +21,8 @@ protected final static Logger logger = Logger.getLogger("Control");
       this.controlListener = controlListener;
    }
 
-   ControlListener controlListener = control ->
-         logger.warning("ControlManager not set, controls will not send its values.");
+   ControlListener controlListener = controls ->
+         logger.warn("ControlManager not set, controls will not send its values.");
 
 // --------------------------- CONSTRUCTORS ---------------------------
 
@@ -56,6 +57,6 @@ protected final static Logger logger = Logger.getLogger("Control");
    // -------------------------- INNER CLASSES --------------------------
 
    public interface ControlListener {
-      void fireControlUpdated(Control control);
+      void fireControlUpdated(Control... controls);
    }
 }

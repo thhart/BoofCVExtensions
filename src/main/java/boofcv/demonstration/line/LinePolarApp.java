@@ -55,7 +55,7 @@ public class LinePolarApp {
             new PathLabel("3", "/home/th/dev/ai/uvisContainer/work/Tensor/20160701/20160701100302637-000000000000000000_frontbild.jpg"),
             new PathLabel("4", "/home/th/dev/ai/uvisContainer/work/Tensor/20160701/20160701131947938-000000000000000000_frontbild.jpg")
       );
-      dev = new BoofCvDevPanel(control -> changeInput(), true, mergeDistance, mergeAngle, edgeThreshold, regionSize, maxLines, paths);
+      dev = new BoofCvDevPanel(controls -> changeInput(), true, mergeDistance, mergeAngle, edgeThreshold, regionSize, maxLines, paths);
       SwingUtilities.invokeLater(this::changeInput);
    }
 

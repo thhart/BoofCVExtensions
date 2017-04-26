@@ -1,22 +1,29 @@
 package boofcv.helper.visualize;
 
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import javax.swing.*;
 import boofcv.gui.image.VisualizeImageData;
 import boofcv.helper.HelperConvert;
-import boofcv.helper.visualize.control.Control;
+import boofcv.helper.visualize.control.*;
 import boofcv.helper.visualize.control.Control.ControlListener;
 import boofcv.io.image.ConvertBufferedImage;
 import boofcv.struct.image.*;
+import org.slf4j.*;
 
 @SuppressWarnings("unused")
 public class BoofCvDevPanel extends JDialog implements ControlListener {
-   private final Control[] controls;
+// ------------------------------ FIELDS ------------------------------
+
+   public static String KEY_RESULT = "Result";
+   public static String KEY_SOURCE = "Source";
+   public static String REFERENCE_DEFAULT = "_DEFAULT_";
+   private Control[] controls;
    private JPanel contentPane;
    private JPanel panelControl;
    private JPanel panelThumbs;
@@ -25,45 +32,64 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
    private JPanel panelAll;
    private JScrollPane scrollPane;
    private JTabbedPane tabbedPane;
-   public static String KEY_RESULT = "Result";
-   public static String KEY_SOURCE = "Source";
-   public static String REFERENCE_DEFAULT = "_DEFAULT_";
    private final Map<String, ImageContainer> containers = new ConcurrentHashMap<>();
    private String referenceSelected = REFERENCE_DEFAULT;
    private final List<ControlListener> listeners = new ArrayList<>();
    private Point pointClicked;
-
    private final List<Roi> rois = new ArrayList<>();
+   protected final static Logger logger = LoggerFactory.getLogger(BoofCvDevPanel.class);
 
-   public void addRoi(Shape shape) {
-      rois.add(new Roi());
+
+   // --------------------------- CONSTRUCTORS ---------------------------
+
+   public BoofCvDevPanel(Map<String, Control> controls) {
+      this(null, controls);
    }
 
-   public void addRoi(Shape shape, Color color) {
-      Roi roi = new Roi();
-      roi.color = color;
-      rois.add(roi);
-   }
-
-   public ImageBase getImage(String reference, String key) {
-      ImageContainer container = containers.get(reference);
-      if(container != null) {
-         return container.images.get(key);
+   public BoofCvDevPanel(ControlListener listener, Class<?> clazz) throws IllegalAccessException {
+      List<Control> cx = new ArrayList<>();
+      for (Field field : clazz.getFields()) {
+         try {
+            if(field.isAnnotationPresent(Variable.class)) {
+               Variable variable = field.getAnnotation(Variable.class);
+               switch (variable.type()) {
+                  case Float:
+                     cx.add(new ControlFloat(field.getName(), field.getFloat(null), (float) variable.min(), (float) variable.max()));
+                     break;
+                  case Integer:
+                     cx.add(new ControlInteger(field.getName(), field.getInt(null), variable.min(), variable.max()));
+                     break;
+                  case Double:
+                     cx.add(new ControlDouble(field.getName(), field.getDouble(null), variable.min(), variable.max()));
+                     break;
+                  case Boolean:
+                     cx.add(new ControlBoolean(field.getName(), field.getBoolean(null)));
+                     break;
+               }
+            }
+         } catch (Exception e) {
+            logger.error("could not initialize control for field: " + field.getName(), e);
+         }
       }
-      return null;
+      initialize(listener, true, cx.toArray(new Control[cx.size()]));
    }
 
-   private static class Roi {
-      private Color color = Color.RED;
-      private float transparency = 1.0f;
-      private Shape shape = new Rectangle();
+   public BoofCvDevPanel(Class<?> clazz) throws IllegalAccessException {
+      this(null, clazz);
+   }
 
+   public BoofCvDevPanel(ControlListener listener, Map<String, Control> map) {
+      this(listener, true, map.values().toArray(new Control[map.size()]));
    }
 
    public BoofCvDevPanel(ControlListener listeners, boolean show, Control... controls) {
+      initialize(listeners, show, controls);
+   }
+
+   private void initialize(ControlListener listener, boolean show, Control... controls) {
       setContentPane(contentPane);
       setModal(false);
-      if(listeners != null) this.listeners.add(listeners);
+      if(listener != null) this.listeners.add(listener);
       // call onCancel() when cross is clicked
       setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
       addWindowListener(new WindowAdapter() {
@@ -115,8 +141,9 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
       }));
    }
 
-   public void addMouseMotionListener(final MouseMotionListener motionAdapter) {
-      panelImage.addMouseMotionListener(motionAdapter);
+   private void onCancel() {
+      // add your code here if necessary
+      dispose();
    }
 
    private void scrollTo(final Point point, final Point pointBase) {
@@ -130,20 +157,64 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
       });
    }
 
-   public BoofCvDevPanel(Map<String, Control> controls) {
-      this(null, controls);
+// ------------------------ INTERFACE METHODS ------------------------
+
+
+// --------------------- Interface ControlListener ---------------------
+
+   public void fireControlUpdated(Control... controls) {
+      for (ControlListener listener : listeners) {
+         new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+               try {
+                  listener.fireControlUpdated(controls);
+               } catch (Exception e) {
+                  e.printStackTrace(); // TODO: handle somehow
+               }
+               return null;
+            }
+
+            protected void done() {
+            }
+         }.execute();
+      }
    }
+
+// -------------------------- OTHER METHODS --------------------------
 
    public void addListener(ControlListener listener) {
       if(listener != null) this.listeners.add(listener);
    }
 
-   public void showOnScreen() {
-      SwingUtilities.invokeLater(() -> setVisible(true));
+   public void addMouseMotionListener(final MouseMotionListener motionAdapter) {
+      panelImage.addMouseMotionListener(motionAdapter);
    }
 
-   public BoofCvDevPanel(ControlListener listeners, Map<String, Control> map) {
-      this(listeners, true, map.values().toArray(new Control[map.size()]));
+   public void addRoi(Shape shape) {
+      rois.add(new Roi());
+   }
+
+   public void addRoi(Shape shape, Color color) {
+      Roi roi = new Roi();
+      roi.color = color;
+      rois.add(roi);
+   }
+
+   public ImageBase getImage(String reference, String key) {
+      ImageContainer container = containers.get(reference);
+      if(container != null) {
+         return container.images.get(key);
+      }
+      return null;
+   }
+
+   public Boolean getValueAsBoolean(Object name) {
+      return (Boolean)getValue(name);
+   }
+
+   public Double getValueAsDouble(Object name) {
+      return (Double)getValue(name);
    }
 
    public Object getValue(Object name) {
@@ -154,32 +225,26 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
       return null;
    }
 
-   public Double getValueAsDouble(Object name) {
-      return (Double)getValue(name);
-   }
-
    public Integer getValueAsInt(Object name) {
       return (Integer)getValue(name);
    }
 
-   public Boolean getValueAsBoolean(Object name) {
-      return (Boolean)getValue(name);
-   }
-
-   public void updateImage(String key, BufferedImage image) {
-      if (image.getSampleModel().getNumBands() > 1) {
-         final InterleavedU8 dst = new InterleavedU8(image.getWidth(), image.getHeight(), 3);
-         ConvertBufferedImage.convertFromInterleaved(image, dst, true);
-         updateImage(key, dst);
-      } else {
-         final GrayU8 dst = new GrayU8(image.getWidth(), image.getHeight());
-         ConvertBufferedImage.convertFrom(image, dst);
-         updateImage(key, dst);
+   public void populate(Class<?> clazz) throws Exception {
+      for (Field field : clazz.getFields()) {
+         for (Control control : controls) {
+            if(control.getName().equals(field.getName())) {
+               field.set(null, control.getValue());
+            }
+         }
       }
    }
 
    public void setBusy(boolean status) {
       progressBar.setIndeterminate(status);
+   }
+
+   public void showOnScreen() {
+      SwingUtilities.invokeLater(() -> setVisible(true));
    }
 
    public void updateImage(String key, ImageBase image) {
@@ -198,32 +263,28 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
       SwingUtilities.invokeLater(() -> panelThumbs.repaint());
    }
 
-   private void onCancel() {
-      // add your code here if necessary
-      dispose();
+   public void visualizeImage(String keyResult, ImageGray<?> output) {
+      updateImage(keyResult, VisualizeImageData.grayMagnitudeTemp(output, null, 1.0));
    }
 
-   public void fireControlUpdated(Control control) {
-      for (ControlListener listener : listeners) {
-         new SwingWorker<Void, Void>() {
-            @Override
-            protected Void doInBackground() throws Exception {
-               try {
-                  listener.fireControlUpdated(control);
-               } catch (Exception e) {
-                  e.printStackTrace(); // TODO: handle somehow
-               }
-               return null;
-            }
-
-            protected void done() {
-            }
-         }.execute();
+   public void updateImage(String key, BufferedImage image) {
+      if (image.getSampleModel().getNumBands() > 1) {
+         final InterleavedU8 dst = new InterleavedU8(image.getWidth(), image.getHeight(), 3);
+         ConvertBufferedImage.convertFromInterleaved(image, dst, true);
+         updateImage(key, dst);
+      } else {
+         final GrayU8 dst = new GrayU8(image.getWidth(), image.getHeight());
+         ConvertBufferedImage.convertFrom(image, dst);
+         updateImage(key, dst);
       }
    }
 
-   public void visualizeImage(String keyResult, ImageGray<?> output) {
-      updateImage(keyResult, VisualizeImageData.grayMagnitudeTemp(output, null, 1.0));
+// -------------------------- INNER CLASSES --------------------------
+
+   private static class Roi {
+      private Color color = Color.RED;
+      private float transparency = 1.0f;
+      private Shape shape = new Rectangle();
    }
 
    private class Painter extends JPanel {
@@ -241,7 +302,6 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
          }
       }
    }
-
 
    private class ImageContainer {
       private String reference;

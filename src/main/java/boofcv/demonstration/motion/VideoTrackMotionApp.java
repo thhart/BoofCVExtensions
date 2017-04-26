@@ -59,7 +59,7 @@ public class VideoTrackMotionApp implements FetcherListener {
 				new PathLabel("Camera2", "http://192.168.188.200/snap.jpg")
 		);
 		controlMap.put("Paths", paths);
-		dev = new BoofCvDevPanel(control -> {
+		dev = new BoofCvDevPanel(controls -> {
 			    changeInput();
 		}, controlMap);
 		scheduledFetcher = new ScheduledFetcher(this);

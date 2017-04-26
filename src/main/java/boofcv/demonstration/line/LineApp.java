@@ -61,7 +61,7 @@ public class LineApp {
 				new PathLabel("3", "/home/th/dev/ai/uvisContainer/work/Tensor/20160701/20160701100302637-000000000000000000_frontbild.jpg"),
 				new PathLabel("4", "/home/th/dev/ai/uvisContainer/work/Tensor/20160701/20160701131947938-000000000000000000_frontbild.jpg")
 		);
-		dev = new BoofCvDevPanel(control -> changeInput(), true, mergeDistance, mergeAngle, edgeThreshold, regionSize, maxLines, paths);
+		dev = new BoofCvDevPanel(controls -> changeInput(), true, mergeDistance, mergeAngle, edgeThreshold, regionSize, maxLines, paths);
 		SwingUtilities.invokeLater(this::changeInput);
 	}
 
@@ -93,22 +93,20 @@ public class LineApp {
 			timeGlobal = System.currentTimeMillis();
 			timeLocal = timeGlobal;
 		}
-		service.submit(new Callable<Void>() {
-			public Void call() throws Exception {
-				try {
-						if (timeLocal == timeGlobal) {
-							workImage = ImageIO.read(new FileInputStream(paths.getValue().getPath()));
-							workImageGray = HelperConvert.convertToBufferedGray(ConvertBufferedImage.extractInterleavedU8(workImage));
-							dev.setBusy(true);
-							updateAlgRansac();
-							dev.setBusy(false);
-						}
-				} catch (Throwable throwable) {
-					throwable.printStackTrace();
-				}
-				return null;
-			}
-		});
+		service.submit((Callable<Void>)() -> {
+         try {
+               if (timeLocal == timeGlobal) {
+                  workImage = ImageIO.read(new FileInputStream(paths.getValue().getPath()));
+                  workImageGray = HelperConvert.convertToBufferedGray(ConvertBufferedImage.extractInterleavedU8(workImage));
+                  dev.setBusy(true);
+                  updateAlgRansac();
+                  dev.setBusy(false);
+               }
+         } catch (Throwable throwable) {
+            throwable.printStackTrace();
+         }
+         return null;
+      });
 
 	}
 
