@@ -21,7 +21,7 @@
         <dependency>
             <groupId>org.boofcv</groupId>
             <artifactId>all</artifactId>
-            <version>0.24.1</version>
+            <version>0.26</version>
         </dependency>
         <dependency>
             <groupId>com.thoughtworks.xstream</groupId>

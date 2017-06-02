@@ -23,6 +23,11 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
    public static String KEY_RESULT = "Result";
    public static String KEY_SOURCE = "Source";
    public static String REFERENCE_DEFAULT = "_DEFAULT_";
+
+   public Control[] getControls() {
+      return controls;
+   }
+
    private Control[] controls;
    private JPanel contentPane;
    private JPanel panelControl;
@@ -32,12 +37,15 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
    private JPanel panelAll;
    private JScrollPane scrollPane;
    private JTabbedPane tabbedPane;
+   private JLabel labelMouse;
    private final Map<String, ImageContainer> containers = new ConcurrentHashMap<>();
    private String referenceSelected = REFERENCE_DEFAULT;
    private final List<ControlListener> listeners = new ArrayList<>();
    private Point pointClicked;
    private final List<Roi> rois = new ArrayList<>();
    protected final static Logger logger = LoggerFactory.getLogger(BoofCvDevPanel.class);
+   private double sx;
+   private double sy;
 
 
    // --------------------------- CONSTRUCTORS ---------------------------
@@ -48,7 +56,9 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
 
    public BoofCvDevPanel(ControlListener listener, Class<?> clazz) throws IllegalAccessException {
       List<Control> cx = new ArrayList<>();
-      for (Field field : clazz.getFields()) {
+      Field[] fields = clazz.getFields();
+      Arrays.sort(fields, Comparator.comparing(Field::getName));
+      for (Field field : fields) {
          try {
             if(field.isAnnotationPresent(Variable.class)) {
                Variable variable = field.getAnnotation(Variable.class);
@@ -125,10 +135,17 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
          }
       });
       panelImage.addMouseMotionListener(new MouseMotionAdapter() {
+         public void mouseMoved(MouseEvent e) {
+            SwingUtilities.invokeLater(() -> {
+               labelMouse.setText(" " + Math.round(e.getPoint().x / sx) + "x" + Math.round(e.getPoint().y / sy) + " ");
+            });
+         }
+
          public void mouseDragged(MouseEvent e) {
             scrollTo(pointClicked, e.getPoint());
          }
       });
+
       panelImage.addMouseWheelListener(e -> SwingUtilities.invokeLater(() -> {
          Dimension size = panelImage.getSize();
          int amount = -e.getUnitsToScroll() * 4;
@@ -139,6 +156,13 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
          //Rectangle rec = panelSource.getBounds();
          //scrollTo(new Point((int) rec.getCenterX(), (int) rec.getCenterY()), new Point(e.getPoint().x, e.getPoint().y));
       }));
+   }
+
+   private void initScale(ImageBase image) {
+      if (image != null) {
+         sx = (double) panelImage.getWidth() / image.getWidth();
+         sy = (double) panelImage.getHeight() / image.getHeight();
+      }
    }
 
    private void onCancel() {
@@ -229,7 +253,7 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
       return (Integer)getValue(name);
    }
 
-   public void populate(Class<?> clazz) throws Exception {
+   public void populateTo(Class<?> clazz) throws Exception {
       for (Field field : clazz.getFields()) {
          for (Control control : controls) {
             if(control.getName().equals(field.getName())) {
@@ -267,6 +291,14 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
       updateImage(keyResult, VisualizeImageData.grayMagnitudeTemp(output, null, 1.0));
    }
 
+   public void updateImage(BufferedImage image) {
+      updateImage(KEY_RESULT, image);
+   }
+
+   public void updateImage(ImageBase image) {
+      updateImage(KEY_RESULT, image);
+   }
+
    public void updateImage(String key, BufferedImage image) {
       if (image.getSampleModel().getNumBands() > 1) {
          final InterleavedU8 dst = new InterleavedU8(image.getWidth(), image.getHeight(), 3);
@@ -290,11 +322,12 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
    private class Painter extends JPanel {
       protected void paintComponent(Graphics g) {
          super.paintComponent(g);
-         ImageContainer imageContainer = containers.get(referenceSelected);
+         ImageContainer imageContainer = getContainerSelected();
          if (imageContainer != null) {
             String key = tabbedPane.getSelectedComponent().getName();
             final ImageBase image = imageContainer.get(key);
             if (image != null) {
+               initScale(image);
                final int width = image.width;
                final int height = image.height;
                g.drawImage(ConvertBufferedImage.convertTo(image, null, true), 0, 0, getWidth(), getHeight(), null);
@@ -333,7 +366,7 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
          super.paintComponent(g);
          final int height = getHeight() - 26;
          int pos = 0;
-         ImageContainer imageContainer = containers.get(referenceSelected);
+         ImageContainer imageContainer = getContainerSelected();
          if (imageContainer != null) {
             for (String key : imageContainer.keySet()) {
                   final ImageBase image = imageContainer.get(key);
@@ -350,5 +383,9 @@ public class BoofCvDevPanel extends JDialog implements ControlListener {
             }
          }
       }
+   }
+
+   private ImageContainer getContainerSelected() {
+      return containers.get(referenceSelected);
    }
 }
