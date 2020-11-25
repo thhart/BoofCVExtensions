@@ -1,8 +1,6 @@
 package boofcv.helper;
-
 import java.awt.Rectangle;
 import org.junit.Assert;
-
 /**
  Created by th on 31.07.16.
  */
@@ -23,5 +21,4 @@ public class HelperGeometryTest {
       rec2.setLocation(10,4);
       Assert.assertEquals(1, HelperGeometry.findClosest(rec1, rec2), 0);
    }
-
 }

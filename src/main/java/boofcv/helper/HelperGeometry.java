@@ -1,5 +1,4 @@
 package boofcv.helper;
-
 import java.util.*;
 import java.util.List;
 import java.awt.*;
@@ -8,7 +7,6 @@ import java.awt.geom.Line2D.Double;
 import boofcv.helper.HelperConvert;
 import georegression.struct.line.LineSegment2D_F32;
 import georegression.struct.shapes.Rectangle2D_I32;
-
 /**
  Created by th on 30.07.16.
  */
@@ -28,16 +26,13 @@ public class HelperGeometry {
       }
       return toRemove.size() > 0 ? clusterRectangles2D(cluster, distance) : cluster;
    }
-
-   public static List<Rectangle2D_I32> clusterRectangles(List<Rectangle2D_I32> recs, final int distance) {
+public static List<Rectangle2D_I32> clusterRectangles(List<Rectangle2D_I32> recs, final int distance) {
       return HelperConvert.rectangles(clusterRectangles2D(HelperConvert.rectangles2D(recs), distance));
    }
-
-   public static Line2D convertToLine(LineSegment2D_F32 f32) {
+public static Line2D convertToLine(LineSegment2D_F32 f32) {
       return new Double(f32.getA().getX(), f32.getA().getY(), f32.getB().getX(), f32.getB().getY());
    }
-
-   public static double findClosest(Rectangle rec1, Rectangle rec2) {
+public static double findClosest(Rectangle rec1, Rectangle rec2) {
       double x1, x2, y1, y2;
       double w, h;
       if (rec1.x > rec2.x) {
@@ -55,4 +50,3 @@ public class HelperGeometry {
       return Math.sqrt(a*a+b*b);
    }
 }
-

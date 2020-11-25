@@ -1,5 +1,4 @@
 package boofcv.helper;
-
 /**
  Created by th on 01.10.16.
  */

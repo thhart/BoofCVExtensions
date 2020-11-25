@@ -1,5 +1,4 @@
 package personal.thhart;
-
 import java.util.*;
 import java.util.concurrent.*;
 import boofcv.abst.feature.associate.ScoreAssociation;
@@ -17,33 +16,26 @@ import boofcv.struct.feature.NccFeature;
 import boofcv.struct.image.GrayU8;
 import georegression.struct.point.Point2D_F64;
 import org.ddogleg.struct.FastQueue;
-
 /**
  Created by th on 27.07.16.
-
- A matching extractor with some base algorithms
+A matching extractor with some base algorithms
  */
 @SuppressWarnings("WeakerAccess")
 public class MatchingExtractor {
    private static InterestPointDetector<GrayU8> createDetector() {
-      GeneralFeatureDetector<GrayU8,GrayU8> alg = FactoryDetectPoint.createFast(new ConfigFast(4, 12), new ConfigGeneralDetector(200, 4, 0.25f), GrayU8.class);
+      GeneralFeatureDetector<GrayU8,GrayU8> alg = FactoryDetectPoint.createFast(new ConfigGeneralDetector(200, 4, 0.25f), new ConfigFastCorner(4, 12), GrayU8.class);
       return FactoryInterestPoint.wrapPoint(alg, 1, GrayU8.class, GrayU8.class);
    }
-
-
-   private static OrientationImage<GrayU8> createOrientation() {
+private static OrientationImage<GrayU8> createOrientation() {
       Class<GrayU8> integralType = GIntegralImageOps.getIntegralType(GrayU8.class);
       OrientationIntegral<GrayU8> orientationII = FactoryOrientationAlgs.sliding_ii(null, integralType);
       return FactoryOrientation.convertImage(orientationII, integralType);
    }
-
-   private static DescribeRegionPoint<GrayU8, NccFeature> createDescriptor() {
+private static DescribeRegionPoint<GrayU8, NccFeature> createDescriptor() {
       return FactoryDescribeRegionPoint.pixelNCC(24, 24, GrayU8.class);
    }
-
-   final static ExecutorService service = Executors.newCachedThreadPool();
-
-   protected static List<Match> extractMatches(GrayU8 previous, GrayU8 next) {
+final static ExecutorService service = Executors.newCachedThreadPool();
+protected static List<Match> extractMatches(GrayU8 previous, GrayU8 next) {
       final List<Match> matches = new ArrayList<>();
       try {
          final ScoreAssociation<NccFeature> scorer = FactoryAssociation.defaultScore(createDescriptor().getDescriptionType());
@@ -83,8 +75,7 @@ public class MatchingExtractor {
       }
       return matches;
    }
-
-   private static List<Feature> createFeatures(GrayU8 gray) {
+private static List<Feature> createFeatures(GrayU8 gray) {
       final ArrayList<Feature> features = new ArrayList<>();
       final DescribeRegionPoint<GrayU8, NccFeature> describe = createDescriptor();
       final FastQueue<NccFeature> queue = UtilFeature.createQueue(describe, 2);
@@ -112,54 +103,41 @@ public class MatchingExtractor {
       }
       return features;
    }
-
-   @SuppressWarnings("unused")
+@SuppressWarnings("unused")
    public static class Feature {
       public Point2D_F64 getPoint() {
          return point;
       }
-
-      public void setPoint(Point2D_F64 point) {
+public void setPoint(Point2D_F64 point) {
          this.point = point;
       }
-
-      public NccFeature getDesc() {
+public NccFeature getDesc() {
          return desc;
       }
-
-      public void setDesc(NccFeature desc) {
+public void setDesc(NccFeature desc) {
          this.desc = desc;
       }
-
-      NccFeature desc;
+NccFeature desc;
       Point2D_F64 point;
    }
-
-   @SuppressWarnings("unused")
+@SuppressWarnings("unused")
    public static class Match {
-
-      public Feature getF1() {
+public Feature getF1() {
          return f1;
       }
-
-      private final Feature f1;
-
-      public Feature getF2() {
+private final Feature f1;
+public Feature getF2() {
          return f2;
       }
-
-      private final Feature f2;
+private final Feature f2;
       private final double score;
-
-      private Match(Feature f1, Feature f2, double score) {
+private Match(Feature f1, Feature f2, double score) {
          this.f1 = f1;
          this.f2 = f2;
          this.score = score;
       }
-
-      public double getScore() {
+public double getScore() {
          return score;
       }
-
-   }
+}
 }

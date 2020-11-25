@@ -10,28 +10,28 @@ import javax.imageio.ImageIO;
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class HelperIo {
-    public static ByteArrayOutputStream readDataFromUrl(URL url) throws IOException {
-       ByteArrayOutputStream bis = new ByteArrayOutputStream();
-       InputStream is = null;
-       try {
-           is = url.openStream();
-           byte[] bytebuff = new byte[4096];
-           int n;
-           while ((n = is.read(bytebuff)) > 0) {
-               bis.write(bytebuff, 0, n);
-           }
-       } finally {
-           try {
-               if (is != null) {
-                   is.close();
-               }
-           } catch (Exception ignored) {
-           }
-       }
-       return bis;
+   public static ByteArrayOutputStream readDataFromUrl(URL url) throws IOException {
+      ByteArrayOutputStream bis = new ByteArrayOutputStream();
+      InputStream is = null;
+      try {
+         is = url.openStream();
+         byte[] bytebuff = new byte[4096];
+         int n;
+         while ((n = is.read(bytebuff)) > 0) {
+            bis.write(bytebuff, 0, n);
+         }
+      } finally {
+         try {
+            if (is != null) {
+               is.close();
+            }
+         } catch (Exception ignored) {
+         }
+      }
+      return bis;
    }
 
    public static BufferedImage readImageFromUrl(URL url) throws IOException {
-       return ImageIO.read(new ByteArrayInputStream(readDataFromUrl(url).toByteArray()));
+      return ImageIO.read(new ByteArrayInputStream(readDataFromUrl(url).toByteArray()));
    }
 }

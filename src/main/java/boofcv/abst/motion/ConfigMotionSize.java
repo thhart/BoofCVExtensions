@@ -1,5 +1,4 @@
 package boofcv.abst.motion;
-
 /**
  Created by th on 11.08.16.
  */
@@ -28,8 +27,7 @@ public class ConfigMotionSize {
     Percentage of input image size to trigger the motion detected to ignore small object triggers.  Default is 25.
     */
    public int percentage = 25;
-
-   public ConfigMotionSize(int blurRadius, double blurSigma, int cannyRadius, float cannyMin, float cannyMax, int percentage) {
+public ConfigMotionSize(int blurRadius, double blurSigma, int cannyRadius, float cannyMin, float cannyMax, int percentage) {
       this.blurRadius = blurRadius;
       this.blurSigma = blurSigma;
       this.cannyRadius = cannyRadius;
@@ -37,8 +35,6 @@ public class ConfigMotionSize {
       this.cannyMax = cannyMax;
       this.percentage = percentage;
    }
-
-   public ConfigMotionSize() {
-
-   }
+public ConfigMotionSize() {
+}
 }

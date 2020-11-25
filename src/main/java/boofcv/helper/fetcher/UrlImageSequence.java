@@ -11,7 +11,7 @@ import boofcv.struct.image.*;
 /**
  Created by th on 01.10.16.
  */
-public class UrlImageSequence implements SimpleImageSequence<ImageInterleaved> {
+public class UrlImageSequence implements SimpleImageSequence {
    private final URL url;
    private final int width, height;
    private InterleavedU8 frame;
@@ -25,6 +25,9 @@ public class UrlImageSequence implements SimpleImageSequence<ImageInterleaved> {
       this.height = image.getHeight();
    }
 
+   public void close() {
+   }
+
    private BufferedImage fetch() throws IOException {
       guiImage = HelperIo.readImageFromUrl(this.url);
       frame = new InterleavedU8(guiImage.getWidth(), guiImage.getHeight(), 3);
@@ -32,12 +35,36 @@ public class UrlImageSequence implements SimpleImageSequence<ImageInterleaved> {
       return guiImage;
    }
 
-   public int getNextWidth() {
-      return width;
+   public int getFrameNumber() {
+      return integer.getAndIncrement();
+   }
+
+   public BufferedImage getGuiImage() {
+      return guiImage;
+   }
+
+   public int getHeight() {
+      return frame.height;
+   }
+
+   public ImageBase getImage() {
+      return null;
+   }
+
+   public ImageType<ImageInterleaved> getImageType() {
+      return ImageType.il(3, ImageDataType.U8);
    }
 
    public int getNextHeight() {
       return height;
+   }
+
+   public int getNextWidth() {
+      return width;
+   }
+
+   public int getWidth() {
+      return frame.width;
    }
 
    public boolean hasNext() {
@@ -53,27 +80,9 @@ public class UrlImageSequence implements SimpleImageSequence<ImageInterleaved> {
       return frame;
    }
 
-   public BufferedImage getGuiImage() {
-      return guiImage;
-   }
-
-   public void close() {
-
-   }
-
-   public int getFrameNumber() {
-      return integer.getAndIncrement();
+   public void reset() {
    }
 
    public void setLoop(boolean loop) {
-
-   }
-
-   public ImageType<ImageInterleaved> getImageType() {
-      return ImageType.il(3, ImageDataType.U8);
-   }
-
-   public void reset() {
-
    }
 }

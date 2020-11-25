@@ -1,6 +1,7 @@
 package boofcv.demonstration.motion;
-
-import java.util.*;
+import java.io.IOException;
+import java.text.*;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -10,20 +11,18 @@ import boofcv.alg.tracker.motion.MotionTracker;
 import boofcv.factory.motion.FactoryMotionTracker;
 import boofcv.gui.binary.VisualizeBinaryData;
 import boofcv.helper.*;
-import boofcv.helper.PathLabel;
-import boofcv.helper.fetcher.*;
-import boofcv.helper.visualize.*;
+import boofcv.helper.fetcher.ScheduledFetcher;
+import boofcv.helper.visualize.BoofCvDevPanel;
 import boofcv.helper.visualize.control.*;
-import boofcv.struct.image.*;
-
+import boofcv.io.image.UtilImageIO;
+import boofcv.struct.image.GrayU8;
 /**
  * Tracks moving objects and its size for motion detection
  *
  * @author Thomas Hartwig
  */
 public class VideoTrackMotionApp implements FetcherListener {
-
-	private final BoofCvDevPanel dev;
+private final BoofCvDevPanel dev;
 	private final ControlDouble tMin;
 	private final ControlDouble tMax;
 	private final ControlInteger blur;
@@ -31,26 +30,28 @@ public class VideoTrackMotionApp implements FetcherListener {
 	private final ControlInteger radius;
 	private final ControlInteger percentage;
 	private final ControlList<PathLabel> paths;
-
-	private BufferedImage workImage;
+private BufferedImage workImage;
 	private GrayU8 framePrevious;
 	private GrayU8 frameNext;
 	private final Map<String, Control> controlMap = new ConcurrentHashMap<>();
-
-	private MotionTracker motionTracker;
-
-	private VideoTrackMotionApp() {
-		tMin = new ControlDouble("Tmin", 2, 0, 255);
+private MotionTracker motionTracker;
+	private long timerSave = 0;
+	private long counter = 0;
+	private NumberFormat format = NumberFormat.getNumberInstance();
+private VideoTrackMotionApp() {
+		format.setMinimumIntegerDigits(4);
+		format.setGroupingUsed(false);
+		tMin = new ControlDouble("Tmin", 2, 0, 255, 0.1);
 		controlMap.put("Tmin", tMin);
-		tMax = new ControlDouble("Tmax", 10, 0, 255);
+		tMax = new ControlDouble("Tmax", 10, 0, 255, 0.1);
 		controlMap.put("Tmax", tMax);
-		blur = new ControlInteger("BlurRadius", 4, 1, 24);
+		blur = new ControlInteger("BlurRadius", 4, 1, 24, 1);
 		controlMap.put("BlurRadius", blur);
-		sigma = new ControlDouble("BlurSigma", -1, -1, 1);
+		sigma = new ControlDouble("BlurSigma", -1, -1, 1, 0.1);
 		controlMap.put("BlurSigma", sigma);
-		radius = new ControlInteger("Radius", 4, 1, 12);
+		radius = new ControlInteger("Radius", 4, 1, 12, 1);
 		controlMap.put("Radius", radius);
-		percentage = new ControlInteger("Percentage/Size", 25, 1, 100);
+		percentage = new ControlInteger("Percentage/Size", 25, 1, 100, 1);
 		controlMap.put("Percentage/Size", percentage);
 		paths = new ControlList<>("Inputs",
 				new PathLabel("Ball", "thhart/video/motion/Ball.mjpeg"),
@@ -59,16 +60,12 @@ public class VideoTrackMotionApp implements FetcherListener {
 				new PathLabel("Camera2", "http://192.168.188.200/snap.jpg")
 		);
 		controlMap.put("Paths", paths);
-		dev = new BoofCvDevPanel(controls -> {
-			    changeInput();
-		}, controlMap);
+		dev = new BoofCvDevPanel(controls -> { changeInput(); }, controlMap);
 		scheduledFetcher = new ScheduledFetcher(this);
 		Executors.newCachedThreadPool().submit(scheduledFetcher);
 		SwingUtilities.invokeLater(() -> changeInput());
 	}
-
-
-	private void renderFeatures(BufferedImage orig, double trackerFPS) {
+private void renderFeatures(BufferedImage orig, double trackerFPS) {
 		if (workImage != null) {
 			Graphics2D g2 = workImage.createGraphics();
 			final int hx = orig.getHeight();
@@ -90,23 +87,19 @@ public class VideoTrackMotionApp implements FetcherListener {
 			}
 		}
 	}
-
-	private long timer = System.currentTimeMillis();
-
-	private final ScheduledFetcher scheduledFetcher;
-
-	private void changeInput() {
+private long timer = System.currentTimeMillis();
+private final ScheduledFetcher scheduledFetcher;
+private void changeInput() {
 		scheduledFetcher.setSource(paths.getValue().getPath());
 		scheduledFetcher.setActive(true);
+		motionTracker = FactoryMotionTracker.motionTracker(new ConfigMotionSize(blur.getValue(), sigma.getValue(), radius.getValue(), tMin.getValue().floatValue(), tMax.getValue().floatValue(), percentage.getValue()));
 		frameNext = null; framePrevious = null;
 	}
-
-	public void updateImage(GrayU8 grayU8, BufferedImage image) {
+public void updateImage(GrayU8 grayU8, BufferedImage image) {
 		workImage = image;
 		updateAlg(grayU8, workImage);
 	}
-
-	private void updateAlg(GrayU8 frame, BufferedImage buffImage) {
+private void updateAlg(GrayU8 frame, BufferedImage buffImage) {
 		long timerMeasure = System.currentTimeMillis();
 		//this.frameLive = frame;
 		this.frameNext = frame.clone();
@@ -116,19 +109,23 @@ public class VideoTrackMotionApp implements FetcherListener {
 			this.framePrevious = frame.clone();
 		}
 		if(frameNext != null && framePrevious != null) {
-			motionTracker = FactoryMotionTracker.motionTracker(new ConfigMotionSize(blur.getValue(), sigma.getValue(), radius.getValue(), tMin.getValue().floatValue(), tMax.getValue().floatValue(), percentage.getValue()));
+			try {
+				UtilImageIO.savePGM(frameNext, "/tmp/motion" + format.format(1000 % counter++) + ".pgm");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			motionTracker.process(framePrevious, frameNext);
-			dev.updateImage("Difference", motionTracker.difference);
+			GrayU8 difference = motionTracker.difference;
+			dev.updateImage("Difference", difference);
 			dev.updateImage("Contour", VisualizeBinaryData.renderBinary(motionTracker.binary, false, null));
+			dev.updateImage("Lines", VisualizeBinaryData.renderContours(motionTracker.contours, null, difference.width, difference.height, null));
 		}
 		renderFeatures(buffImage, 1000/(System.currentTimeMillis() - timerMeasure));
 		if (workImage != null) {
 			dev.updateImage(BoofCvDevPanel.KEY_RESULT, workImage);
 		}
 	}
-
-	public static void main( String args[] ) {
+public static void main( String args[] ) {
 		final VideoTrackMotionApp app = new VideoTrackMotionApp();
 	}
-
 }
