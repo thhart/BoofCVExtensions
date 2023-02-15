@@ -31,7 +31,7 @@ public class MotionTracker {
    public GrayU8 difference;
    public GrayU8 binary;
    public List<EdgeContour> contours;
-   public final List<Rectangle2D_I32> rectangles = new ArrayList<>();
+   public final List<georegression.struct.shapes.Rectangle2D_I32> rectangles = new ArrayList<>();
 public boolean isMotionDetected() {
       return motionDetected;
    }

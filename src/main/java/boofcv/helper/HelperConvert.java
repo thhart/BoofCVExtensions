@@ -1,4 +1,5 @@
 package boofcv.helper;
+
 import java.util.*;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
@@ -6,12 +7,13 @@ import boofcv.core.image.ConvertImage;
 import boofcv.io.image.ConvertBufferedImage;
 import boofcv.struct.image.*;
 import georegression.struct.shapes.Rectangle2D_I32;
+
 /**
  Created by th on 28.07.16.
  */
 public class HelperConvert {
    public static GrayU8 convertToGray(InterleavedU8 image) {
-      return ConvertImage.average(image, new GrayU8(image.width, image.height));
+      return ConvertImage.average(image, null);
    }
 public static BufferedImage convertToBufferedGray(ImageBase image) {
       if (image instanceof GrayU8) {

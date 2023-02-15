@@ -16,7 +16,7 @@ public class UrlImageSequence implements SimpleImageSequence {
    private final int width, height;
    private InterleavedU8 frame;
    private BufferedImage guiImage;
-   private AtomicInteger integer = new AtomicInteger(0);
+   private final AtomicInteger integer = new AtomicInteger(0);
 
    public UrlImageSequence(String url) throws IOException {
       this.url = new URL(url);

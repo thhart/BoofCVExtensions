@@ -35,9 +35,9 @@ private BufferedImage workImage;
 	private GrayU8 frameNext;
 	private final Map<String, Control> controlMap = new ConcurrentHashMap<>();
 private MotionTracker motionTracker;
-	private long timerSave = 0;
+	private final long timerSave = 0;
 	private long counter = 0;
-	private NumberFormat format = NumberFormat.getNumberInstance();
+	private final NumberFormat format = NumberFormat.getNumberInstance();
 private VideoTrackMotionApp() {
 		format.setMinimumIntegerDigits(4);
 		format.setGroupingUsed(false);
@@ -125,7 +125,7 @@ private void updateAlg(GrayU8 frame, BufferedImage buffImage) {
 			dev.updateImage(BoofCvDevPanel.KEY_RESULT, workImage);
 		}
 	}
-public static void main( String args[] ) {
+public static void main( String[] args) {
 		final VideoTrackMotionApp app = new VideoTrackMotionApp();
 	}
 }
