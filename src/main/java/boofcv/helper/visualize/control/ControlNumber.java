@@ -1,15 +1,20 @@
 package boofcv.helper.visualize.control;
-import java.text.NumberFormat;
-import java.util.Hashtable;
-import java.awt.*;
+
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.*;
+import java.text.NumberFormat;
+import java.util.Hashtable;
 
 /**
  Created by th on 28.07.16.
  */
-abstract class ControlNumber<V> extends Control<V> {
+public abstract class ControlNumber<V> extends Control<V> {
+	private final double min;
+	private final double max;
+	private final double precision;
 	private JPanel panel;
 	private JSpinner spinner;
 	private JToggleButton toggleButton;
@@ -20,12 +25,27 @@ abstract class ControlNumber<V> extends Control<V> {
 	private final Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
 	private final double multiplier;
 
-	ControlNumber(final String name, double value, double min, double max, boolean integer, double step) {
+	public double getMin() {
+		return min;
+	}
+
+	public double getMax() {
+		return max;
+	}
+
+	public double getPrecision() {
+		return precision;
+	}
+
+	ControlNumber(final String name, double value, double min, double max, boolean integer, double precision) {
 		super(name);
 		multiplier = integer ? 1 : 1000;
 		format.setMaximumFractionDigits(integer ? 0 : 2);
 		format.setMinimumFractionDigits(integer ? 0 : 2);
-		model = new SpinnerNumberModel(value, min, max, integer ? Math.max(1, (int)step) : step);
+		this.precision = precision;
+		model = new SpinnerNumberModel(value, min, max, integer ? Math.max(1, (int) precision) : this.precision);
+		this.max = max;
+		this.min = min;
 		SwingUtilities.invokeLater(() -> {
 			spinner.setModel(model);
 			spinner.addChangeListener(change -> {
@@ -35,8 +55,8 @@ abstract class ControlNumber<V> extends Control<V> {
 				}
 				updateTitle();
 			});
-			slider.setMaximum((int)(max * multiplier));
-			slider.setMinimum((int)(min * multiplier));
+			slider.setMaximum((int)(this.max * multiplier));
+			slider.setMinimum((int)(this.min * multiplier));
 			slider.setValue((int)(value * multiplier));
 			slider.setSnapToTicks(true);
 			slider.setPaintTrack(true);
@@ -85,5 +105,9 @@ abstract class ControlNumber<V> extends Control<V> {
 
 	public Component getComponent() {
 		return panel;
+	}
+
+	public void set(double value) {
+		throw new RuntimeException("not supported");
 	}
 }

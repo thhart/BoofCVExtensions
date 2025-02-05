@@ -67,14 +67,7 @@
                       <name value=""/>
                     </properties>
                     <border type="etched"/>
-                    <children>
-                      <component id="be1a0" class="javax.swing.JLabel">
-                        <constraints border-constraint="Center"/>
-                        <properties>
-                          <text value="Label"/>
-                        </properties>
-                      </component>
-                    </children>
+                    <children/>
                   </grid>
                 </children>
               </scrollpane>

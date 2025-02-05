@@ -1,8 +1,9 @@
 package boofcv.helper.visualize.control;
 
-import java.awt.Component;
 import boofcv.helper.visualize.BoofCvDevPanel;
 import org.apache.logging.log4j.LogManager;
+
+import java.awt.*;
 
 /**
  Created by th on 28.07.16.
@@ -49,6 +50,6 @@ public abstract class Control<V> {
 	public abstract V getValue();
 
 	public interface ControlListener {
-		void fireControlUpdated(Control... controls);
+		void fireControlUpdated(Control<?>... controls);
 	}
 }

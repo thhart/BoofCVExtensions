@@ -1,27 +1,29 @@
 package boofcv.helper.visualize;
 
-import java.lang.reflect.Field;
-import java.util.List;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
-import javax.swing.*;
-import boofcv.core.image.*;
+import boofcv.core.image.FactoryGImageMultiBand;
+import boofcv.core.image.GImageMultiBand;
 import boofcv.gui.image.VisualizeImageData;
 import boofcv.helper.HelperConvert;
 import boofcv.helper.visualize.control.*;
 import boofcv.helper.visualize.control.Control.ControlListener;
 import boofcv.io.image.ConvertBufferedImage;
 import boofcv.struct.image.*;
+import com.itth.optimizerhelper.Variable;
 import org.apache.logging.log4j.LogManager;
 
-import com.itth.optimizerhelper.Variable;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
-public class BoofCvDevPanel extends JFrame implements ControlListener {
+public class BoofCvDevPanel implements ControlListener {
 	protected final static org.apache.logging.log4j.Logger logger = LogManager.getLogger(BoofCvDevPanel.class);
 
 	public static String KEY_RESULT = "Result";
@@ -30,8 +32,14 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 	private final Map<String, ImageContainer> containers = new ConcurrentHashMap<>();
 	private final List<ControlListener> listeners = new ArrayList<>();
 	private final List<PointListener> pointListeners = new ArrayList<>();
+	private final String referenceSelected = REFERENCE_DEFAULT;
 	private final List<ShapePaintable> shapePaintableList = new ArrayList<>();
 	private final List<TextPaintable> textPaintableList = new ArrayList<>();
+
+	public JPanel getContentPane() {
+		return contentPane;
+	}
+
 	private JPanel contentPane;
 	private Control[] controls;
 	private JLabel labelColor;
@@ -43,7 +51,6 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 	private JPanel panelThumbs;
 	private Point pointClicked;
 	private JProgressBar progressBar;
-	private final String referenceSelected = REFERENCE_DEFAULT;
 	private JScrollPane scrollPane;
 	private double sx;
 	private double sy;
@@ -75,7 +82,7 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 				logger.error("could not initialize control for field: " + field.getName(), e);
 			}
 		}
-		initialize(listener, true, cx.toArray(new Control[0]));
+		initialize(listener, false, cx.toArray(new Control[0]));
 	}
 
 	public BoofCvDevPanel(ControlListener listener, Object clazz) {
@@ -100,7 +107,7 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 				logger.error("could not initialize control for field: " + field.getName(), e);
 			}
 		}
-		initialize(listener, true, cx.toArray(new Control[0]));
+		initialize(listener, false, cx.toArray(new Control[0]));
 	}
 
 	public BoofCvDevPanel(Class<?> clazz) throws IllegalAccessException {
@@ -112,11 +119,11 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 	}
 
 	public BoofCvDevPanel(Control<?>... controls) {
-		this(null, true, controls);
+		this(null, false, controls);
 	}
 
 	public BoofCvDevPanel(ControlListener listener, Map<String, Control<?>> map) {
-		this(listener, true, map.values().toArray(new Control[0]));
+		this(listener, false, map.values().toArray(new Control[0]));
 	}
 
 	public BoofCvDevPanel(ControlListener listeners, boolean show, Control<?>... controls) {
@@ -154,7 +161,7 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 		synchronized (shapePaintableList) {
 			shapePaintableList.add(new ShapePaintable(shape));
 		}
-		repaint();
+		contentPane.repaint();
 	}
 
 	public void addShape(Color color, Shape... shapes) {
@@ -165,7 +172,7 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 				this.shapePaintableList.add(shapePaintable);
 			}
 		}
-		repaint();
+		contentPane.repaint();
 	}
 
 	public void addText(String format, Point point) {
@@ -174,7 +181,11 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 			e.point = point;
 			textPaintableList.add(e);
 		}
-		repaint();
+		contentPane.repaint();
+	}
+
+	public Integer asInt(Object name) {
+		return (Integer)asValue(name);
 	}
 
 	public void clearLists() {
@@ -184,6 +195,7 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 				shapePaintableList.clear();
 			}
 		}
+		contentPane.repaint();
 	}
 
 	public void fireControlUpdated(Control... controls) {
@@ -229,7 +241,7 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 		return sy;
 	}
 
-	public Object getValue(Object name) {
+	public Object asValue(Object name) {
 		if (name instanceof Control) return ((Control)name).getValue();
 		for (Control control : controls) {
 			if (control.getName().equals(name)) return control.getValue();
@@ -237,20 +249,16 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 		return null;
 	}
 
-	public Boolean getValueAsBoolean(Object name) {
-		return (Boolean)getValue(name);
+	public Boolean asBool(Object name) {
+		return (Boolean)asValue(name);
 	}
 
-	public Double getValueAsDouble(Object name) {
-		return (Double)getValue(name);
+	public Double asDouble(Object name) {
+		return (Double)asValue(name);
 	}
 
-	public Integer getValueAsInt(Object name) {
-		return (Integer)getValue(name);
-	}
-
-	public Float getValueAsFloat(Object name) {
-		return (Float)getValue(name);
+	public Float asFloat(Object name) {
+		return (Float)asValue(name);
 	}
 
 	private void initScale(ImageBase image) {
@@ -261,19 +269,9 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 	}
 
 	private void initialize(ControlListener listener, boolean show, Control<?>... controls) {
-		setContentPane(contentPane);
-		setTitle("BoofCV Panel");
 		if (listener != null) this.listeners.add(listener);
-		// call onCancel() when cross is clicked
-		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-		addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent e) {
-				onCancel();
-			}
-		});
 		this.controls = controls;
-		// call onCancel() on ESCAPE
-		contentPane.registerKeyboardAction(e -> onCancel(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+
 		final Box box = Box.createVerticalBox();
 		panelControl.add(box, BorderLayout.NORTH);
 		SwingUtilities.invokeLater(() -> {
@@ -281,13 +279,12 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 				control.setControlListener(this);
 				box.add(control.getComponent());
 			}
-			setSize(1920, 1280);
 		});
 		SwingUtilities.invokeLater(() -> {
 			panelImage.add(new Painter());
 			panelThumbs.add(new PainterThumbnail());
 			if (show) {
-				setVisible(true);
+				showOnScreen();
 			}
 		});
 		tabbedPane.addChangeListener(e -> SwingUtilities.invokeLater(() -> {
@@ -314,7 +311,7 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 					if (imageContainer != null) {
 						String key = tabbedPane.getSelectedComponent().getName();
 						final ImageBase image = imageContainer.get(key);
-						if (image != null) {
+						if (image != null && image.width > 0 && image.height > 0)	 {
 							initScale(image);
 							final int width = image.width;
 							final int height = image.height;
@@ -344,7 +341,7 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 
 	private void onCancel() {
 		// add your code here if necessary
-		dispose();
+		if(frame != null) frame.dispose();
 	}
 
 	public void populateTo(Class<?> clazz) throws Exception {
@@ -365,6 +362,10 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 				}
 			}
 		}
+	}
+
+	public void repaint() {
+		contentPane.repaint();
 	}
 
 	private void scrollTo(final Point point, final Point pointBase) {
@@ -388,9 +389,47 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 		});
 	}
 
+
+	private volatile JFrame frame;
+
 	public BoofCvDevPanel showOnScreen() {
-		SwingUtilities.invokeLater(() -> setVisible(true));
+		createFrame();
+		SwingUtilities.invokeLater(() -> frame.setVisible(true));
 		return this;
+	}
+
+	public JFrame createFrame() {
+		if(frame == null) {
+			synchronized (this) {
+				if (frame == null) {
+					frame = new JFrame();
+					SwingUtilities.invokeLater(() -> {
+						// call onCancel() when cross is clicked
+			frame.setContentPane(contentPane);
+						frame.setTitle("BoofCV Panel");
+						frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+			WeakReference<BoofCvDevPanel> weakReference = new WeakReference<>(this);
+						frame.addWindowListener(new WindowAdapter() {
+				public void windowClosing(WindowEvent e) {
+					if (weakReference.get() != null) {
+						weakReference.get().onCancel();
+					}
+				}
+			});
+			contentPane.registerKeyboardAction(e -> {
+				if(weakReference.get() != null)
+					weakReference.get().onCancel();
+			}, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+
+
+						frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+						frame.pack();
+						frame.setSize(1920, 1280);
+					});
+			}
+		}
+		}
+		return frame;
 	}
 
 	public void updateImage(String key, ImageBase image) {
@@ -423,8 +462,8 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 
 	public void updateImage(String key, BufferedImage image) {
 		if (image.getSampleModel().getNumBands() > 1) {
-			final InterleavedU8 dst = new InterleavedU8(image.getWidth(), image.getHeight(), image.getSampleModel().getNumBands());
-			ConvertBufferedImage.convertFromInterleaved(image, dst, true);
+			final Planar<GrayU8> dst = new Planar<>(GrayU8.class, image.getWidth(), image.getHeight(), image.getSampleModel().getNumBands());
+			ConvertBufferedImage.convertFromPlanar(image, dst, true, GrayU8.class);
 			updateImage(key, dst);
 		} else {
 			final GrayU8 dst = new GrayU8(image.getWidth(), image.getHeight());
@@ -442,9 +481,9 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 	}
 
 	private static class ShapePaintable {
-		private Color color = Color.RED;
 		private final Shape shape;
 		private final float transparency = 1.0f;
+		private Color color = Color.RED;
 
 		public ShapePaintable(Shape shape) {
 			this.shape = shape;
@@ -452,10 +491,10 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 	}
 
 	private static class TextPaintable {
-		public Point point;
 		private final Color color = Color.WHITE;
 		private final String text;
 		private final float transparency = 1.0f;
+		public Point point;
 
 		public TextPaintable(String text) {
 			this.text = text;
@@ -493,11 +532,18 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 			ImageContainer imageContainer = getContainerSelected();
 			if (imageContainer != null) {
 				String key = tabbedPane.getSelectedComponent().getName();
-				final ImageBase image = imageContainer.get(key);
+				ImageBase image = imageContainer.get(key);
 				if (image != null) {
 					initScale(image);
 					final int width = image.width;
 					final int height = image.height;
+					if(image.getImageType().getFamily() == ImageType.Family.PLANAR && image.getImageType().getNumBands() == 4) {
+						Planar<GrayU8> planar = new Planar<>(GrayU8.class, width, height, 3);
+						for (int i = 0; i < 3; i++) {
+							planar.setBand(i, ((Planar<GrayU8>)image).getBand(i));
+						}
+						image = planar;
+					}
 					g.drawImage(ConvertBufferedImage.convertTo(image, null, true), 0, 0, getWidth(), getHeight(), null);
 					Graphics2D g2d = (Graphics2D)g;
 					g2d.setTransform(AffineTransform.getScaleInstance(sx, sy));
@@ -529,8 +575,12 @@ public class BoofCvDevPanel extends JFrame implements ControlListener {
 					final ImageBase image = imageContainer.get(key);
 					int ph = (image.height < height) ? image.height : height;
 					int pw = (int)((double)ph / image.height * image.width);
-					g.drawImage(HelperConvert.convertToBufferedGray(image), pos, 24, pw, ph, null);
-					g.setColor(Color.WHITE);
+          try {
+            g.drawImage(HelperConvert.convertToBufferedGray(image), pos, 24, pw, ph, null);
+          } catch (Exception e) {
+						logger.warn("could not convert image to buffered image: " + e);
+          }
+          g.setColor(Color.WHITE);
 					g.fillRect(pos, 0, pw, 24);
 					g.setColor(Color.DARK_GRAY);
 					g.drawRect(pos, 24, pw, pw);

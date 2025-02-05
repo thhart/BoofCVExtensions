@@ -30,7 +30,7 @@ private String source = "";
 private final WeakReference<Runnable> reference;
 public ScheduledFetcher(FetcherListener fetcherListener) {
       this.fetcherListener = fetcherListener;
-      reference = new WeakReference<>(this);
+      reference = new WeakReference<>(this); //FIXME: check self reference
    }
 public void run() {
       while (reference.get() != null) {

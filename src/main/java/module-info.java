@@ -1,4 +1,4 @@
-module BoofCV.Extensions {
+module com.itth.boofcv.extensions {
 	requires java.desktop;
 	requires optimizerHelper;
 	requires boofcv.uber;
